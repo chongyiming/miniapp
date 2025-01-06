@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import "./App.css";
 import Card from "./Components/Card/Card";
 import Cart from "./Components/Cart/Cart";
+import { supabase } from "./createClient";
+import Button from "./Components/Button/Button";
 const { getData } = require("./db/db");
 
 const foods = getData();
@@ -9,55 +11,127 @@ const foods = getData();
 const tele = window.Telegram.WebApp;
 function App() {
   const [cartItems, setCartItems] = useState([]);
-
+  const [user,setUser]=useState({name:'',email:'',password:''})
+ const [users,setUsers]=useState([])
+ const [agents,setAgents]=useState([])
+ console.log(user)
   useEffect(() => {
     tele.ready();
-  });
-  const onAdd = (food) => {
-    const exist = cartItems.find((x) => x.id === food.id);
-    if (exist) {
-      setCartItems(
-        cartItems.map((x) =>
-          x.id === food.id ? { ...exist, quantity: exist.quantity + 1 } : x
-        )
-      );
-    } else {
-      setCartItems([...cartItems, { ...food, quantity: 1 }]);
-    }
-  };
+    fetchUsers();
+    fetchAgents();
+  },[]);
 
-  const onRemove = (food) => {
-    const exist = cartItems.find((x) => x.id === food.id);
+  async function fetchUsers(){
+    const {data}= await supabase.from('SignUpUser').select('*').eq('status',"pending");
+    setUsers(data);
+  }
 
-    if (exist.quantity === 1) {
-      setCartItems(cartItems.filter((x) => x.id !== food.id));
-    } else {
-      setCartItems(
-        cartItems.map((x) =>
-          x.id === food.id ? { ...exist, quantity: exist.quantity - 1 } : x
-        )
-      );
-    }
-  };
+  async function fetchAgents(){
+    const {data}= await supabase.from('SignUpUser').select('*').eq('status',"approved");
 
-  const onCheckout = () => {
-    tele.MainButton.text = "Pay:)";
-    tele.MainButton.show();
-  };
+    setAgents(data);
+  }
+  
+  function handleChange(event){
+    setUser(prevFormData=>{return {
+      ...prevFormData,[event.target.name]:event.target.value
+    }})
+  }
+
+  async function createUser(){
+
+    await supabase.from('SignUpUser').insert({username: user.name,email:user.email,password:user.password,status:"pending"});
+    fetchUsers()
+  }
+
+
+
+  async function deleteUser(userId){
+    
+    const {data,error}=await supabase.from('SignUpUser').delete().eq('id',userId);
+    fetchUsers();
+    if(error){console.log(error)}
+    if(data){console.log(data)}
+  }
+
+  async function approveUser(userId){
+    await supabase.from('SignUpUser').update({status:"approved"}).eq("id",userId);
+    fetchUsers()
+    fetchAgents()
+  }
+
+
   return (
     <>
-      <h1 className="heading">Order Food</h1>
-      {/* <Button title={"Add"} disable={false} type={"add"} />
-      <Button title={"Remove"} disable={false} type={"remove"} />
-      <Button title={"Checkout"} disable={false} type={"checkout"} /> */}
-      <Cart cartItems={cartItems} onCheckout={onCheckout} />
-      <div className="cards__container">
-        {foods.map((food) => {
-          return (
-            <Card food={food} key={food.id} onAdd={onAdd} onRemove={onRemove} />
-          );
-        })}
-      </div>
+          <h1 className="heading">User Page</h1>
+
+    <form onSubmit={createUser}>
+      <input 
+      type="text"
+      placeholder="Name"
+      name='name'
+      onChange={handleChange}/>
+      <input 
+      type="text"
+      placeholder="Password"
+      name='password'
+      onChange={handleChange}/>
+      <input 
+      type="text"
+      placeholder="Email"
+      name='email'
+      onChange={handleChange}/>
+      <button type="submit">Create</button>
+    </form>
+    
+      <h1 className="heading">Admin Page</h1>
+      <h1 className="heading">Pending Approval</h1>
+      <div>
+  <table>
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {users.map((user)=> 
+      <tr key={user.id}>
+        <td>{user.id}</td>
+        <td>{user.username}</td>
+        <td>{user.email}</td>
+        <td>
+        <button className="approve-btn" onClick={() => approveUser(user.id)}>Approve</button>
+<button className="reject-btn" onClick={() => deleteUser(user.id)}>Reject</button>
+        </td>
+      </tr>)}
+    </tbody>
+  </table>
+
+  <h1 className="heading">Agent Table</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Password</th>
+      </tr>
+    </thead>
+    <tbody>
+      {agents.map((agent)=> 
+      <tr key={agent.id}>
+        <td>{agent.id}</td>
+        <td>{agent.username}</td>
+        <td>{agent.email}</td>
+        <td>{agent.password}</td>
+      </tr>)}
+    </tbody>
+  </table>
+</div>
     </>
   );
 }
