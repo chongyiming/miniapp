@@ -4,26 +4,30 @@ import Card from "./Components/Card/Card";
 import Cart from "./Components/Cart/Cart";
 import { supabase } from "./createClient";
 import Button from "./Components/Button/Button";
-const { getData } = require("./db/db");
-
-const foods = getData();
+import { Login,SignUp,HomePage } from "./pages";
+import { Route,Routes } from "react-router-dom";
 
 const tele = window.Telegram.WebApp;
 function App() {
-  const [cartItems, setCartItems] = useState([]);
   const [user,setUser]=useState({name:'',email:'',password:''})
  const [users,setUsers]=useState([])
  const [agents,setAgents]=useState([])
- console.log(user)
   useEffect(() => {
     tele.ready();
-    fetchUsers();
+    auth();
+    // fetchUsers();
     fetchAgents();
   },[]);
 
+
+  async function auth(){
+    const { signInData, error } = await supabase.auth.signInWithPassword({ email: 'bot@gmail.com', password: 'bot0123' });
+  }
   async function fetchUsers(){
-    const {data}= await supabase.from('SignUpUser').select('*').eq('status',"pending");
-    setUsers(data);
+    // const { data } = await supabase.from('SignUpUser').select('*').eq('status', "pending");
+    // alert(data[0].username)
+    // setUsers(data);
+    
   }
 
   async function fetchAgents(){
@@ -63,7 +67,13 @@ function App() {
 
   return (
     <>
-          <h1 className="heading">User Page</h1>
+
+    <Routes>
+      <Route path={'/'} element={<SignUp/>}/>
+      <Route path={'/login'} element={<Login/>}/>
+      <Route path={'/homepage'} element={<HomePage/>}/>
+    </Routes>
+          {/* <h1 className="heading">User Page</h1>
 
     <form onSubmit={createUser}>
       <input 
@@ -131,7 +141,7 @@ function App() {
       </tr>)}
     </tbody>
   </table>
-</div>
+</div> */}
     </>
   );
 }
