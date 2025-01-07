@@ -15,18 +15,17 @@ function App() {
   useEffect(() => {
     tele.ready();
     auth();
-    // fetchUsers();
+    fetchUsers();
     fetchAgents();
   },[]);
 
 
   async function auth(){
-    const { signInData, error } = await supabase.auth.signInWithPassword({ email: 'bot@gmail.com', password: 'bot0123' });
+    const { signInData, error } = await supabase.auth.signInWithPassword({ email: 'admin@gmail.com', password: 'admin0123' });
   }
   async function fetchUsers(){
-    // const { data } = await supabase.from('SignUpUser').select('*').eq('status', "pending");
-    // alert(data[0].username)
-    // setUsers(data);
+    const { data } = await supabase.from('SignUpUser').select('*').eq('status', "pending");
+    setUsers(data);
     
   }
 
@@ -68,11 +67,11 @@ function App() {
   return (
     <>
 
-    <Routes>
+    {/* <Routes>
       <Route path={'/'} element={<SignUp/>}/>
       <Route path={'/login'} element={<Login/>}/>
       <Route path={'/homepage'} element={<HomePage/>}/>
-    </Routes>
+    </Routes> */}
           {/* <h1 className="heading">User Page</h1>
 
     <form onSubmit={createUser}>
@@ -92,7 +91,7 @@ function App() {
       name='email'
       onChange={handleChange}/>
       <button type="submit">Create</button>
-    </form>
+    </form> */}
     
       <h1 className="heading">Admin Page</h1>
       <h1 className="heading">Pending Approval</h1>
@@ -141,7 +140,7 @@ function App() {
       </tr>)}
     </tbody>
   </table>
-</div> */}
+</div>
     </>
   );
 }
