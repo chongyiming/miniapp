@@ -1,6 +1,6 @@
 import React,{useEffect,useState,useRef,ChangeEvent, use} from 'react'
 import { supabase } from "../../createClient";
-import { Form } from 'react-bootstrap';
+
 import { v4 as uuidv4} from 'uuid';
 import "./HomePage.css";
 import { Link,useNavigate } from 'react-router-dom';
@@ -24,16 +24,6 @@ function HomePage() {
     
   }
 
-  async function uploadImage(e){
-    let file=e.target.files[0];
-    const {data,error}=await supabase.storage.from('test').upload(userId+"/"+uuidv4(),file)
-  if (data){
-    getImages();
-  }else{
-    console.log(error)
-  }
-  
-  }
   async function getImages() {
     const { data, error } = await supabase.storage
       .from('test')
@@ -78,8 +68,9 @@ function HomePage() {
   </div>
       <h1>Tasks Completed: {tasks.length}
       </h1>
-      <Form.Group><Form.Control type="file" accept="image/png,image/jpeg" onChange={(e)=>uploadImage(e)}/></Form.Group>
-      <button onClick={() => navigate('/profile')}>Testing</button>
+      
+
+
     </div>
     
   )

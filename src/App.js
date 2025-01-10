@@ -6,11 +6,15 @@ import { supabase } from "./createClient";
 import Button from "./Components/Button/Button";
 import { Login,SignUp,HomePage,Profile } from "./pages";
 import { Route,Routes } from "react-router-dom";
+import { Link,useNavigate } from 'react-router-dom';
+
 const tele = window.Telegram.WebApp;
 function App() {
   const [user,setUser]=useState({name:'',email:'',password:''})
  const [users,setUsers]=useState([])
  const [agents,setAgents]=useState([])
+const navigate = useNavigate();  // Add this hook
+ 
   useEffect(() => {
     tele.ready();
     auth();
@@ -73,6 +77,24 @@ function App() {
       <Route path={'/homepage'} element={<HomePage/>}/>
       <Route path={'/profile'} element={<Profile/>}/>
     </Routes>
+    <footer className="footer">
+  <button onClick={() => navigate('/homepage')} className="footer-icon">
+    <i className="fas fa-home"></i>
+    <span>Home</span>
+  </button>
+  <button onClick={() => navigate('/profile')} className="footer-icon">
+    <i className="fas fa-user"></i>
+    <span>Profile</span>
+  </button>
+  <button onClick={() => navigate('/tasks')} className="footer-icon">
+    <i className="fas fa-tasks"></i>
+    <span>Tasks</span>
+  </button>
+  <button onClick={() => navigate('/settings')} className="footer-icon">
+    <i className="fas fa-cog"></i>
+    <span>Settings</span>
+  </button>
+</footer>
           {/* <h1 className="heading">User Page</h1>
 
     <form onSubmit={createUser}>

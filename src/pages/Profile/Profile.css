@@ -1,0 +1,21 @@
+
+.profilePicContainer{
+    width: 80%;
+    h2{
+        margin-left: 10px; /* Optional: add space to the right of the image */
+
+    }
+    .center-form-group {
+        display: flex;
+        justify-content: start; /* Centers horizontally */
+        align-items: center;    /* Centers vertically */
+        margin-top: 10px;
+        margin-left: 10px; /* Optional: add space to the right of the image */
+
+    }
+    .image{
+        /* display: block; Removes unnecessary flex behavior */
+        margin-left: 10px; /* Optional: add space to the right of the image */
+    }
+}
+
