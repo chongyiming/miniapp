@@ -4,9 +4,8 @@ import Card from "./Components/Card/Card";
 import Cart from "./Components/Cart/Cart";
 import { supabase } from "./createClient";
 import Button from "./Components/Button/Button";
-import { Login,SignUp,HomePage } from "./pages";
+import { Login,SignUp,HomePage,Profile } from "./pages";
 import { Route,Routes } from "react-router-dom";
-
 const tele = window.Telegram.WebApp;
 function App() {
   const [user,setUser]=useState({name:'',email:'',password:''})
@@ -72,6 +71,7 @@ function App() {
       <Route path={'/'} element={<SignUp/>}/>
       <Route path={'/login'} element={<Login/>}/>
       <Route path={'/homepage'} element={<HomePage/>}/>
+      <Route path={'/profile'} element={<Profile/>}/>
     </Routes>
           {/* <h1 className="heading">User Page</h1>
 

@@ -1,0 +1,17 @@
+.logout {
+    margin-top: 5px;
+    position: absolute; /* Use absolute positioning */
+    top: 10px; /* Adjust top distance as needed */
+    right: 10px; /* Align to the far right */
+}
+
+h1{
+    margin-top: 5rem;
+    text-align: center;
+  }
+
+.image{
+    width: 30%;
+    justify-self: center;
+    display: flex;
+}
