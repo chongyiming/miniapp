@@ -1,0 +1,51 @@
+.header {
+  display: flex;
+  align-items: center;
+  height: 80px;
+  background-color: white; /* Adjust as needed */
+  padding: 0 20px; /* Adjust horizontal padding */
+  justify-content: space-between;
+  .headerButton {
+    margin-top: 2rem;
+  }
+}
+
+.logo {
+  height: 60px; /* Adjust logo size */
+  margin-right: 20px; /* Space between logo and title */
+}
+.header-right {
+  display: flex;
+  gap: 10px; /* Add space between username and logout button */
+  width: 100%; /* Keep the specified width */
+  justify-content: end;
+
+  .upperRight {
+    border: 2px solid #000; /* Add a border */
+    border-radius: 10px; /* Rounded corners */
+    padding: 10px; /* Add padding */
+    display: flex;
+    align-items: center; /* Center content vertically */
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide overflowing text */
+    text-overflow: ellipsis; /* Show ellipsis for truncated text */
+    min-width: 1%; /* Set a maximum width for the element */
+    max-width: 100%;
+  }
+
+  .logout-button {
+    background-color: #ff4d4d; /* Red background */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+    margin: 0;
+  }
+
+  .logout-button:hover {
+    background-color: #e60000; /* Darker red on hover */
+  }
+}

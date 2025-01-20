@@ -4,166 +4,100 @@ import Card from "./Components/Card/Card";
 import Cart from "./Components/Cart/Cart";
 import { supabase } from "./createClient";
 import Button from "./Components/Button/Button";
-import { Login,SignUp,HomePage,Profile } from "./pages";
-import { Route,Routes } from "react-router-dom";
-import { Link,useNavigate } from 'react-router-dom';
+import { Login, SignUp, HomePage, Profile, Ranking, Tasks } from "./pages";
+import { Route, Routes } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Header from "./Components/Header/Header";
 
 const tele = window.Telegram.WebApp;
 function App() {
-  const [user,setUser]=useState({name:'',email:'',password:''})
- const [users,setUsers]=useState([])
- const [agents,setAgents]=useState([])
-const navigate = useNavigate();  // Add this hook
- 
+  const [user, setUser] = useState({ name: "", email: "", password: "" });
+  const [users, setUsers] = useState([]);
+  const [agents, setAgents] = useState([]);
+  const navigate = useNavigate(); // Add this hook
+
   useEffect(() => {
     tele.ready();
     auth();
     // fetchUsers();
-    fetchAgents();
-  },[]);
+    // fetchAgents();
+    const userId = localStorage.getItem("id");
+  }, []);
 
-
-  async function auth(){
-    const { signInData, error } = await supabase.auth.signInWithPassword({ email: 'bot@gmail.com', password: 'bot0123' });
+  async function auth() {
+    const { signInData, error } = await supabase.auth.signInWithPassword({
+      email: "bot@gmail.com",
+      password: "bot0123",
+    });
   }
-  async function fetchUsers(){
-    // const { data } = await supabase.from('SignUpUser').select('*').eq('status', "pending");
-    // alert(data[0].username)
-    // setUsers(data);
-    
-  }
+  // async function fetchUsers() {
+  // const { data } = await supabase.from('SignUpUser').select('*').eq('status', "pending");
+  // alert(data[0].username)
+  // setUsers(data);
+  // }
 
-  async function fetchAgents(){
-    const {data}= await supabase.from('SignUpUser').select('*').eq('status',"approved");
+  async function fetchAgents() {
+    const { data } = await supabase
+      .from("SignUpUser")
+      .select("*")
+      .eq("status", "approved");
 
     setAgents(data);
   }
-  
-  function handleChange(event){
-    setUser(prevFormData=>{return {
-      ...prevFormData,[event.target.name]:event.target.value
-    }})
+
+  function handleChange(event) {
+    setUser((prevFormData) => {
+      return {
+        ...prevFormData,
+        [event.target.name]: event.target.value,
+      };
+    });
   }
 
-  async function createUser(){
+  // async function createUser() {
+  //   await supabase.from("SignUpUser").insert({
+  //     username: user.name,
+  //     email: user.email,
+  //     password: user.password,
+  //     status: "pending",
+  //   });
+  //   fetchUsers();
+  // }
 
-    await supabase.from('SignUpUser').insert({username: user.name,email:user.email,password:user.password,status:"pending"});
-    fetchUsers()
-  }
+  // async function deleteUser(userId) {
+  //   const { data, error } = await supabase
+  //     .from("SignUpUser")
+  //     .delete()
+  //     .eq("id", userId);
+  //   fetchUsers();
+  //   if (error) {
+  //     console.log(error);
+  //   }
+  //   if (data) {
+  //     console.log(data);
+  //   }
+  // }
 
-
-
-  async function deleteUser(userId){
-    
-    const {data,error}=await supabase.from('SignUpUser').delete().eq('id',userId);
-    fetchUsers();
-    if(error){console.log(error)}
-    if(data){console.log(data)}
-  }
-
-  async function approveUser(userId){
-    await supabase.from('SignUpUser').update({status:"approved"}).eq("id",userId);
-    fetchUsers()
-    fetchAgents()
-  }
-
+  // async function approveUser(userId) {
+  //   await supabase
+  //     .from("SignUpUser")
+  //     .update({ status: "approved" })
+  //     .eq("id", userId);
+  //   fetchUsers();
+  //   fetchAgents();
+  // }
 
   return (
     <>
-
-    <Routes>
-      <Route path={'/'} element={<SignUp/>}/>
-      <Route path={'/login'} element={<Login/>}/>
-      <Route path={'/homepage'} element={<HomePage/>}/>
-      <Route path={'/profile'} element={<Profile/>}/>
-    </Routes>
-    <footer className="footer">
-  <button onClick={() => navigate('/homepage')} className="footer-icon">
-    <i className="fas fa-home"></i>
-    <span>Home</span>
-  </button>
-  <button onClick={() => navigate('/profile')} className="footer-icon">
-    <i className="fas fa-user"></i>
-    <span>Profile</span>
-  </button>
-  <button onClick={() => navigate('/tasks')} className="footer-icon">
-    <i className="fas fa-tasks"></i>
-    <span>Tasks</span>
-  </button>
-  <button onClick={() => navigate('/settings')} className="footer-icon">
-    <i className="fas fa-cog"></i>
-    <span>Settings</span>
-  </button>
-</footer>
-          {/* <h1 className="heading">User Page</h1>
-
-    <form onSubmit={createUser}>
-      <input 
-      type="text"
-      placeholder="Name"
-      name='name'
-      onChange={handleChange}/>
-      <input 
-      type="text"
-      placeholder="Password"
-      name='password'
-      onChange={handleChange}/>
-      <input 
-      type="text"
-      placeholder="Email"
-      name='email'
-      onChange={handleChange}/>
-      <button type="submit">Create</button>
-    </form>
-    
-      <h1 className="heading">Admin Page</h1>
-      <h1 className="heading">Pending Approval</h1>
-      <div>
-  <table>
-    <thead>
-      <tr>
-        <th>Id</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {users.map((user)=> 
-      <tr key={user.id}>
-        <td>{user.id}</td>
-        <td>{user.username}</td>
-        <td>{user.email}</td>
-        <td>
-        <button className="approve-btn" onClick={() => approveUser(user.id)}>Approve</button>
-<button className="reject-btn" onClick={() => deleteUser(user.id)}>Reject</button>
-        </td>
-      </tr>)}
-    </tbody>
-  </table>
-
-  <h1 className="heading">Agent Table</h1>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Id</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Password</th>
-      </tr>
-    </thead>
-    <tbody>
-      {agents.map((agent)=> 
-      <tr key={agent.id}>
-        <td>{agent.id}</td>
-        <td>{agent.username}</td>
-        <td>{agent.email}</td>
-        <td>{agent.password}</td>
-      </tr>)}
-    </tbody>
-  </table>
-</div> */}
+      <Header />
+      <Routes>
+        <Route path={"/"} element={<SignUp />} />
+        <Route path={"/login"} element={<Login />} />
+        <Route path={"/homepage"} element={<HomePage />} />
+        <Route path={"/profile"} element={<Profile />} />
+        <Route path={"/ranking"} element={<Ranking />} />
+        <Route path={"/tasks"} element={<Tasks />} />
+      </Routes>
     </>
   );
 }
