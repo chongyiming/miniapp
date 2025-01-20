@@ -1,0 +1,89 @@
+.page-container {
+  display: flex;
+  flex-direction: column;
+  margin-top: 1rem;
+
+  .container {
+    display: flex; /* Enables flex layout */
+    flex-direction: column; /* Stack children vertically */
+    align-items: center; /* Center children horizontally */
+    width: 80%;
+    margin: auto; /* Center the container on the page */
+    margin-bottom: 5rem;
+    flex: 1;
+    box-sizing: border-box;
+    gap: 1rem;
+
+    .image {
+      display: block; /* Ensures it behaves like a block element */
+      max-width: 100%; /* Ensures the image doesn’t overflow the container */
+      height: auto; /* Keeps the image aspect ratio */
+      margin-bottom: 10px; /* Adds some spacing below the image */
+    }
+
+    h2 {
+      margin: 10px 0; /* Adjusts vertical spacing for the header */
+    }
+
+    .center-form-group {
+      display: flex;
+      justify-content: center; /* Center the form group horizontally */
+      align-items: center; /* Center the form group vertically */
+      margin-top: 10px;
+      .cameraImage {
+        border: 1px solid black;
+        padding: 5px;
+        border-radius: 10px;
+      }
+    }
+    .profile {
+      display: flex; /* Makes the container a flex container */
+      flex-direction: column; /* Ensures children are stacked vertically */
+      text-align: left;
+      width: 100%;
+      gap: 2rem; /* Adds space between children */
+    }
+  }
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    text-align: center;
+  }
+
+  .modal-content h2 {
+    margin-bottom: 1rem;
+  }
+
+  .modal-content label {
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .modal-content input {
+    width: 90%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+  }
+
+  .modal-buttons button {
+    margin: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+}

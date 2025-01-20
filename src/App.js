@@ -4,8 +4,10 @@ import Card from "./Components/Card/Card";
 import Cart from "./Components/Cart/Cart";
 import { supabase } from "./createClient";
 import Button from "./Components/Button/Button";
-import { Login, SignUp, HomePage } from "./pages";
+import { Login, SignUp, HomePage, Profile, Ranking, Tasks } from "./pages";
 import { Route, Routes } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Header from "./Components/Header/Header";
 
 const tele = window.Telegram.WebApp;
 function App() {
@@ -20,10 +22,11 @@ function App() {
   const [users, setUsers] = useState([]);
   const [agents, setAgents] = useState([]);
   const [submittedQuests, setSubmittedQuests] = useState([]); // Added for agent's submitted quests
-
+  const navigate = useNavigate(); // Add this hook
   useEffect(() => {
     tele.ready();
     auth();
+    const userId = localStorage.getItem("id");
     fetchUsers();
     fetchAgents();
     fetchSubmittedQuests(); // Fetch the agent-submitted quests
