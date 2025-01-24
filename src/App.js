@@ -1,15 +1,34 @@
 import { useState, useEffect } from "react";
-import "./App.css";
-import Card from "./Components/Card/Card";
-import Cart from "./Components/Cart/Cart";
 import { supabase } from "./createClient";
-import Button from "./Components/Button/Button";
-import { Login, SignUp, HomePage, Profile, Ranking, Tasks } from "./pages";
-import { Route, Routes } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
-import Header from "./Components/Header/Header";
+import "./App.css";
+
+// Modal component for file preview
+function PreviewModal({ file, onClose }) {
+  if (!file) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>
+          ×
+        </button>
+        {file.type === "pdf" ? (
+          <iframe
+            src={`${file.url}#toolbar=0`}
+            className="preview-iframe"
+            title={file.name}
+          />
+        ) : (
+          <img src={file.url} alt={file.name} className="preview-image" />
+        )}
+      </div>
+    </div>
+  );
+}
 
 const tele = window.Telegram.WebApp;
+
 function App() {
   const [user, setUser] = useState({ name: "", email: "", password: "" });
   const [quest, setQuest] = useState({
@@ -21,15 +40,18 @@ function App() {
   });
   const [users, setUsers] = useState([]);
   const [agents, setAgents] = useState([]);
-  const [submittedQuests, setSubmittedQuests] = useState([]); // Added for agent's submitted quests
-  const navigate = useNavigate(); // Add this hook
+  const [submittedQuests, setSubmittedQuests] = useState([]);
+  const [previewFile, setPreviewFile] = useState(null);
+  const navigate = useNavigate();
+  const [userId, setUserId] = useState();
+
   useEffect(() => {
     tele.ready();
     auth();
-    const userId = localStorage.getItem("id");
     fetchUsers();
     fetchAgents();
-    fetchSubmittedQuests(); // Fetch the agent-submitted quests
+    fetchSubmittedQuests();
+    setUserId(localStorage.getItem("id"));
   }, []);
 
   async function auth() {
@@ -38,6 +60,7 @@ function App() {
       password: "admin0123",
     });
   }
+
   async function fetchUsers() {
     const { data } = await supabase
       .from("SignUpUser")
@@ -51,7 +74,6 @@ function App() {
       .from("SignUpUser")
       .select("*")
       .eq("status", "approved");
-
     setAgents(data);
   }
 
@@ -124,15 +146,19 @@ function App() {
     const { name, value, type, checked } = event.target;
     setQuest((prevQuest) => ({
       ...prevQuest,
-      [name]: type === "checkbox" ? checked : value, // Handle checkbox for approval
+      [name]: type === "checkbox" ? checked : value,
     }));
+  }
+
+  function isPDF(filename) {
+    return filename.toLowerCase().endsWith(".pdf");
   }
 
   async function fetchSubmittedQuests() {
     const { data: quests, error } = await supabase
       .from("AgentSubmittedQuests")
       .select("*")
-      .eq("status", false); // Fetch quests with status 'false'
+      .eq("status", false);
 
     if (error) {
       console.error("Error fetching quests:", error);
@@ -142,218 +168,331 @@ function App() {
     const updatedQuests = await Promise.all(
       quests.map(async (quest) => {
         if (quest.photo_required) {
-          // Fetch images from the storage
-          const { data: images, error: storageError } = await supabase.storage
-            .from("test") // Replace "images" with your bucket name
-            .list(`${quest.agent_id}/quest/${quest.quest_id}/`, { limit: 10 }); // Fetch images inside userId/questId
+          const { data: files, error: storageError } = await supabase.storage
+            .from("test")
+            .list(`${quest.agent_id}/quest/${quest.quest_id}/`, { limit: 10 });
 
           if (storageError) {
             console.error(
-              `Error fetching images for quest ${quest.id}:`,
+              `Error fetching files for quest ${quest.id}:`,
               storageError
             );
-            return { ...quest, images: [] }; // Return the quest with no images
+            return { ...quest, files: [] };
           }
 
-          // Generate public URLs for the images
-          const imageUrls = images.map(
-            (image) =>
-              supabase.storage
-                .from("test")
-                .getPublicUrl(
-                  `${quest.agent_id}/quest/${quest.quest_id}/${image.name}`
-                ).data.publicUrl
-          );
-          console.log("images", images);
-          return { ...quest, images: imageUrls }; // Add image URLs to the quest
+          const fileUrls = files.map((file) => {
+            const publicUrl = supabase.storage
+              .from("test")
+              .getPublicUrl(
+                `${quest.agent_id}/quest/${quest.quest_id}/${file.name}`
+              ).data.publicUrl;
+
+            return {
+              url: publicUrl,
+              name: file.name,
+              type: isPDF(file.name) ? "pdf" : "image",
+            };
+          });
+
+          return { ...quest, files: fileUrls };
         }
 
-        return { ...quest, images: [] }; // If no photos required, return empty image array
+        return { ...quest, files: [] };
       })
     );
 
     setSubmittedQuests(updatedQuests);
   }
 
-  // Handle quest approval
-  async function approveQuest(questId) {
+  async function approveQuest(questId, questPoint, agent_id) {
     await supabase
       .from("AgentSubmittedQuests")
       .update({ status: true })
       .eq("id", questId);
-    fetchSubmittedQuests(); // Refresh the quest list after approval
+    const data = await supabase
+      .from("AgentLeaderboard")
+      .select("score")
+      .eq("agent_id", userId);
+
+    await supabase
+      .from("AgentLeaderboard")
+      .update({ score: data.data[0].score + questPoint })
+      .eq("agent_id", agent_id);
+    fetchSubmittedQuests();
   }
 
-  // Handle quest rejection
   async function rejectQuest(questId) {
-    await supabase.from("AgentSubmittedQuests").delete().eq("id", questId);
-    fetchSubmittedQuests(); // Refresh the quest list after rejection
+    try {
+      const { data: quest, error: fetchError } = await supabase
+        .from("AgentSubmittedQuests")
+        .select("*")
+        .eq("id", questId)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching quest details:", fetchError);
+        return;
+      }
+
+      if (quest.photo_required) {
+        const folderPath = `${quest.agent_id}/quest/${quest.quest_id}/`;
+
+        const { data: files, error: listError } = await supabase.storage
+          .from("test")
+          .list(folderPath);
+
+        if (listError) {
+          console.error("Error listing files for deletion:", listError);
+          return;
+        }
+
+        if (files.length > 0) {
+          const filePaths = files.map((file) => `${folderPath}${file.name}`);
+          const { error: deleteError } = await supabase.storage
+            .from("test")
+            .remove(filePaths);
+
+          if (deleteError) {
+            console.error("Error deleting files:", deleteError);
+            return;
+          }
+        }
+      }
+
+      const { error: deleteQuestError } = await supabase
+        .from("AgentSubmittedQuests")
+        .delete()
+        .eq("id", questId);
+
+      if (deleteQuestError) {
+        console.error("Error deleting quest:", deleteQuestError);
+        return;
+      }
+
+      console.log("Quest and associated folder deleted successfully!");
+      fetchSubmittedQuests();
+    } catch (error) {
+      console.error("Unexpected error during rejection:", error);
+    }
   }
+
+  // ... [Previous functions remain unchanged]
 
   return (
-    <>
-      <h1 className="heading">Admin Page</h1>
-      <h1 className="heading">Pending Approval</h1>
-      <div>
-        <table>
-          <thead>
-            <tr>
-              <th>Id</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td>{user.id}</td>
-                <td>{user.username}</td>
-                <td>{user.email}</td>
-                <td>
-                  <button
-                    className="approve-btn"
-                    onClick={() => {
-                      approveUser(user.id, user.tg_username);
-                    }}
-                  >
-                    Approve
-                  </button>
-                  <button
-                    className="reject-btn"
-                    onClick={() => deleteUser(user.id)}
-                  >
-                    Reject
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="admin-dashboard">
+      <header className="dashboard-header">
+        <h1>Admin Dashboard</h1>
+      </header>
 
-        <h1 className="heading">Agent Table</h1>
+      <main className="dashboard-content">
+        <section className="dashboard-section">
+          <div className="section-header">
+            <h2>Pending Approvals</h2>
+          </div>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.id}</td>
+                    <td>{user.username}</td>
+                    <td>{user.email}</td>
+                    <td className="action-buttons">
+                      <button
+                        className="btn btn-approve"
+                        onClick={() => approveUser(user.id, user.tg_username)}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="btn btn-reject"
+                        onClick={() => deleteUser(user.id)}
+                      >
+                        Reject
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Id</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Password</th>
-            </tr>
-          </thead>
-          <tbody>
-            {agents.map((agent) => (
-              <tr key={agent.id}>
-                <td>{agent.id}</td>
-                <td>{agent.username}</td>
-                <td>{agent.email}</td>
-                <td>{agent.password}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <h1 className="heading">Submitted Quests</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Quest Id</th>
-            <th>Quest Header</th>
-            <th>Photo Required</th>
-            <th>Action</th>
-            <th>Images</th> {/* Display images */}
-          </tr>
-        </thead>
-        <tbody>
-          {submittedQuests.map((quest) => (
-            <tr key={quest.id}>
-              <td>{quest.id}</td>
-              <td>{quest.header}</td>
-              <td>{quest.photo_required ? "Yes" : "No"}</td>
-              <td>
-                <button
-                  className="approve-btn"
-                  onClick={() => approveQuest(quest.id)}
-                >
-                  Approve
-                </button>
-                <button
-                  className="reject-btn"
-                  onClick={() => rejectQuest(quest.id)}
-                >
-                  Reject
-                </button>
-              </td>
-              <td>
-                {quest.images &&
-                  quest.images.map((url, index) => (
-                    <img
-                      key={index}
-                      src={url}
-                      alt={`Quest ${quest.id} Image ${index + 1}`}
-                      width={100}
-                    />
-                  ))}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <section className="dashboard-section">
+          <div className="section-header">
+            <h2>Approved Agents</h2>
+          </div>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Password</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agents.map((agent) => (
+                  <tr key={agent.id}>
+                    <td>{agent.id}</td>
+                    <td>{agent.username}</td>
+                    <td>{agent.email}</td>
+                    <td>{agent.password}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-      <h1 className="heading">Create Quest</h1>
-      <div className="quest-container">
-        <label>
-          Quest Header:
-          <input
-            type="text"
-            name="header"
-            value={quest.header}
-            onChange={handleQuestChange}
-            placeholder="Enter quest header"
-          />
-        </label>
-        <label>
-          Quest Content:
-          <textarea
-            name="content"
-            value={quest.content}
-            onChange={handleQuestChange}
-            placeholder="Enter quest content"
-          />
-        </label>
-        <label>
-          Quest Date:
-          <input
-            type="date"
-            name="date"
-            value={quest.date}
-            onChange={handleQuestChange}
-          />
-        </label>
-        <label>
-          Quest Points:
-          <input
-            type="number"
-            name="points"
-            value={quest.points}
-            onChange={handleQuestChange}
-            placeholder="Enter quest points"
-          />
-        </label>
-        <label>
-          Photo required:
-          <input
-            type="checkbox"
-            name="photo_required"
-            checked={quest.photo_required}
-            onChange={handleQuestChange}
-            className="checkbox"
-          />
-        </label>
-        <button onClick={createQuest}>Create Quest</button>
-      </div>
-    </>
+        <section className="dashboard-section">
+          <div className="section-header">
+            <h2>Submitted Quests</h2>
+          </div>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Quest ID</th>
+                  <th>Quest Header</th>
+                  <th>Photo Required</th>
+                  <th>Actions</th>
+                  <th>Files</th>
+                </tr>
+              </thead>
+              <tbody>
+                {submittedQuests.map((quest) => (
+                  <tr key={quest.id}>
+                    <td>{quest.id}</td>
+                    <td>{quest.header}</td>
+                    <td>{quest.photo_required ? "Yes" : "No"}</td>
+                    <td className="action-buttons">
+                      <button
+                        className="btn btn-approve"
+                        onClick={() =>
+                          approveQuest(
+                            quest.id,
+                            quest.quest_points,
+                            quest.agent_id
+                          )
+                        }
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="btn btn-reject"
+                        onClick={() => rejectQuest(quest.id)}
+                      >
+                        Reject
+                      </button>
+                    </td>
+                    <td>
+                      {quest.files &&
+                        quest.files.map((file, index) => (
+                          <div key={index} className="file-preview">
+                            {file.type === "pdf" ? (
+                              <div className="pdf-preview">
+                                <span
+                                  className="pdf-link"
+                                  onClick={() => setPreviewFile(file)}
+                                >
+                                  View PDF: {file.name}
+                                </span>
+                              </div>
+                            ) : (
+                              <img
+                                src={file.url}
+                                alt={`Quest ${quest.id} File ${index + 1}`}
+                                className="thumbnail"
+                                onClick={() => setPreviewFile(file)}
+                              />
+                            )}
+                          </div>
+                        ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="dashboard-section">
+          <div className="section-header">
+            <h2>Create New Quest</h2>
+          </div>
+          <div className="quest-form">
+            <div className="form-group">
+              <label>Quest Header</label>
+              <input
+                type="text"
+                name="header"
+                value={quest.header}
+                onChange={handleQuestChange}
+                placeholder="Enter quest header"
+              />
+            </div>
+            <div className="form-group">
+              <label>Quest Content</label>
+              <textarea
+                name="content"
+                value={quest.content}
+                onChange={handleQuestChange}
+                placeholder="Enter quest content"
+              />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Quest Date</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={quest.date}
+                  onChange={handleQuestChange}
+                />
+              </div>
+              <div className="form-group">
+                <label>Quest Points</label>
+                <input
+                  type="number"
+                  name="points"
+                  value={quest.points}
+                  onChange={handleQuestChange}
+                  placeholder="Enter quest points"
+                />
+              </div>
+            </div>
+            <div className="form-group checkbox-group">
+              <label>
+                <input
+                  type="checkbox"
+                  name="photo_required"
+                  checked={quest.photo_required}
+                  onChange={handleQuestChange}
+                />
+                Photo Required
+              </label>
+            </div>
+            <button className="btn btn-primary" onClick={createQuest}>
+              Create Quest
+            </button>
+          </div>
+        </section>
+      </main>
+
+      {previewFile && (
+        <PreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
+      )}
+    </div>
   );
 }
 
