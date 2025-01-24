@@ -1,135 +1,218 @@
+import "./SignUp.css";
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../createClient";
 import { Link, useNavigate } from "react-router-dom";
-import "./SignUp.css";
-import toast, { Toaster } from "react-hot-toast";
-import Header from "../../Components/Header/Header";
+import { Building } from "lucide-react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const tele = window.Telegram.WebApp;
 
 function SignUp() {
   const [user, setUser] = useState({ name: "", email: "", password: "" });
-  console.log(user);
-  const navigate = useNavigate(); // Add this hook
-  const [telegramUser, setTelegramUser] = useState({
-    id: null,
-    username: null,
-  });
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("login"); // Default active tab is now "login"
+
   useEffect(() => {
     const localUsername = localStorage.getItem("username");
     if (localUsername) {
       navigate("/homepage");
     }
-    getTelegramUserData();
   }, [navigate]);
 
-  function getTelegramUserData() {
-    if (tele.initDataUnsafe && tele.initDataUnsafe.user) {
-      const { id, username } = tele.initDataUnsafe.user; // Telegram ID and username
-      setTelegramUser({ id, username });
-      console.log("Telegram ID:", id);
-      console.log("Telegram Username:", username);
-    } else {
-      console.log("No Telegram user data available.");
-    }
-  }
   function handleChange(event) {
-    setUser((prevFormData) => {
-      return {
-        ...prevFormData,
-        [event.target.name]: event.target.value,
-      };
-    });
+    setUser((prevFormData) => ({
+      ...prevFormData,
+      [event.target.name]: event.target.value,
+    }));
   }
 
-  async function createUser(event) {
+  async function register(event) {
     event.preventDefault();
 
-    const { id, username } = telegramUser; // Extract id and username from state
-
-    if (!id || !username) {
-      toast.error("Telegram user data is missing. Please try again.", {
-        duration: 2000,
-        style: {
-          background: "#ef4444",
-          color: "white",
-        },
-      });
-      return;
-    }
     try {
-      const { error } = await supabase.from("SignUpUser").insert({
+      const { data, error } = await supabase
+        .from("SignUpUser")
+        .select("*")
+        .eq("email", user.email);
+
+      if (data && data.length > 0) {
+        toast.error("User is already registered!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+        return;
+      }
+
+      const { error: insertError } = await supabase.from("SignUpUser").insert({
         username: user.name,
         email: user.email,
         password: user.password,
         status: "pending",
-        tg_username: username,
-        tg_id: id,
         contact: 0,
       });
 
-      if (error) {
-        throw error;
-      }
+      if (insertError) throw insertError;
 
       toast.success("Sign Up successful!", {
-        duration: 2000,
-        style: {
-          background: "#22c55e",
-          color: "white",
-        },
+        position: "top-right",
+        autoClose: 2000,
       });
 
       setTimeout(() => {
-        navigate("/login");
-      }, 1000);
+        window.location.reload();
+      }, 3000);
     } catch (error) {
       toast.error(`Sign Up failed: ${error.message}`, {
-        duration: 2000,
-        style: {
-          background: "#ef4444",
-          color: "white",
-        },
+        position: "top-right",
+        autoClose: 2000,
       });
     }
-
-    setTimeout(() => {
-      navigate("/login");
-    }, 1000);
   }
+
+  async function login(event) {
+    event.preventDefault();
+
+    try {
+      const { data } = await supabase
+        .from("SignUpUser")
+        .select("*")
+        .eq("status", "approved")
+        .eq("email", user.email)
+        .eq("password", user.password);
+
+      if (data && data.length > 0) {
+        // Store user data in localStorage
+        window.localStorage.setItem("userId", data[0].id);
+        window.localStorage.setItem("username", data[0].username);
+        window.localStorage.setItem("email", data[0].email);
+
+        // Redirect or show a success message
+        toast.success("Login successful!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+
+        // Optionally redirect after login
+        setTimeout(() => {
+          navigate("/homepage"); // Replace with your desired route
+        }, 2000);
+      } else {
+        // Show an error message if no matching user is found
+        toast.error("Invalid email or password, or account not approved.", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      toast.error(`An error occurred: ${error.message}`, {
+        position: "top-right",
+        autoClose: 2000,
+      });
+    }
+  }
+
   return (
     <>
-      <Toaster position="top-right" /> {/* Add this line */}
-      {/* <Header /> */}
       <div className="container">
-        <h1 className="heading">Sign Up</h1>
-
-        <form onSubmit={createUser}>
-          <input
-            type="text"
-            placeholder="Name"
-            name="name"
-            onChange={handleChange}
-          />
-          <input
-            type="text"
-            placeholder="Email"
-            name="email"
-            onChange={handleChange}
-          />
-          <input
-            type="text"
-            placeholder="Password"
-            name="password"
-            onChange={handleChange}
-          />
-          <button type="submit">Sign Up</button>
-          Already have an account?{" "}
-          <Link to="/login" className="link">
-            Login
-          </Link>
-        </form>
+        <div className="left-panel">
+          <div className="logo">Your Logo</div>
+          <div className="testimonial">
+            <div className="testimonial-text">
+              "This platform has revolutionized how I track my commissions and
+              stay motivated. The gamification elements make it fun to hit
+              targets!"
+            </div>
+            <div className="testimonial-author">Amaci, Top Lengzai 2025</div>
+          </div>
+        </div>
+        <div className="right-panel">
+          <div className="login-container">
+            <div className="welcome-text">
+              <h1>Welcome back</h1>
+              <p>Sign in to your account to continue</p>
+            </div>
+            <div className="auth-options">
+              <button
+                className={`auth-option ${
+                  activeTab === "login" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("login")}
+              >
+                Login
+              </button>
+              <button
+                className={`auth-option ${
+                  activeTab === "register" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("register")}
+              >
+                Register
+              </button>
+            </div>
+            {activeTab === "register" ? (
+              <form onSubmit={register} className="login-form">
+                <div className="form-group">
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    name="name"
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    name="email"
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    name="password"
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <button type="submit" className="submit-button">
+                  Sign Up
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={login} className="login-form">
+                <div className="form-group">
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    name="email"
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    name="password"
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <button type="submit" className="submit-button">
+                  Login
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
       </div>
+      <ToastContainer />
     </>
   );
 }

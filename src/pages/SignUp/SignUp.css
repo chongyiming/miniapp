@@ -1,46 +1,152 @@
-.container {
-  margin: 3rem auto; /* Centers the container and adds vertical margin */
-  padding: 1rem; /* Adds space inside the border */
-  border-radius: 5px;
-  max-width: 90%; /* Restricts the container width to leave space on the sides */
-  box-sizing: border-box; /* Ensures padding and border are included in the width */
-  background-color: white;
-  .heading {
-    margin-bottom: 1rem;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
 }
 
-form {
+body {
+  background-color: #f5f5f5;
+}
+
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.left-panel {
+  flex: 1;
+  background-color: #1a56db;
+  color: white;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1rem; /* Adds space between form elements */
-  margin: 0 auto;
-  width: 90%;
+  justify-content: space-between;
 }
 
-input {
-  width: 80%;
-  padding: 0.5rem;
-  margin: 0.5rem 0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
-button {
-  padding: 0.7rem;
-  border: none;
-  background-color: #4caf50; /* Green background */
+.testimonial {
+  max-width: 500px;
+}
+
+.testimonial-text {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.testimonial-author {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.right-panel {
+  flex: 1;
+  background-color: #111827;
   color: white;
-  cursor: pointer;
-  border-radius: 4px;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+.welcome-text {
+  text-align: center;
   margin-bottom: 2rem;
 }
 
-button:hover {
-  background-color: #45a049; /* Darker green on hover */
+.welcome-text h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.welcome-text p {
+  color: #9ca3af;
+}
+
+.auth-options {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.auth-option {
+  flex: 1;
+  padding: 0.75rem;
+  text-align: center;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.auth-option.active {
+  color: white;
+  border-bottom-color: white;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group input {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid #374151;
+  background-color: #1f2937;
+  color: white;
+  font-size: 1rem;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.submit-button {
+  background-color: white;
+  color: #111827;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-button:hover {
+  background-color: #e5e7eb;
+}
+
+.link-container {
+  text-align: center;
+  margin-top: 1rem;
 }
 
 .link {
-  color: black;
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
 }

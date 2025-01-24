@@ -1,0 +1,70 @@
+/* Sidebar */
+.sidebar {
+  position: fixed; /* Fix sidebar position */
+  height: 100vh;
+  width: var(--sidebar-width);
+  background-color: var(--secondary-color);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+  transition: width 0.3s ease;
+  z-index: 10; /* Ensure sidebar stays above content */
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+/* Rest of your existing styles remain unchanged */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-light);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.sidebar.collapsed .logo-text {
+  display: none;
+}
+
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  color: var(--text-color);
+  text-decoration: none;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.nav-item:hover {
+  background-color: var(--hover-color);
+}
+
+.nav-item.active {
+  background-color: var(--hover-color);
+  color: var(--text-light);
+}
+
+.sidebar.collapsed .nav-text {
+  display: none;
+}
